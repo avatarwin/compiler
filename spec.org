@@ -1,0 +1,38 @@
+* keywords:
+
+** types:
+	auto
+	boolean
+	byte
+	ubyte
+	char
+	int
+	int32
+	int64
+	int256
+	float
+	void
+	unsigned
+	complex
+
+
+	struct
+	class
+	alias
+
+	matrix
+	array
+	list
+
+*** variable properties:
+
+	 .align=size
+	 .width=size
+	 .signed
+	 .unsigned
+	 .const
+	 .constptr
+	 
+*** example:
+	int .align=4 .width=32 .signed xx = 3, yy = 6;
+	

@@ -1,1 +1,6 @@
-spec.org~
+*~
+*#
+hask/comp
+bytecode
+*.o
+*.hi

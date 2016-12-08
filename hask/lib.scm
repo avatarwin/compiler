@@ -36,7 +36,7 @@
   (fold || #f lst))
 (define (max first . rest) (fold (lambda (old new) (if (> old new) old new)) first rest))
 (define (min first . rest) (fold (lambda (old new) (if (< old new) old new)) first rest))
-(define (length lst) (fold (lambda (x y) (+ x 1)) 0 lst))
+(define (length lst) (foldl (lambda (x y) (+ x 1)) 0 lst))
 (define (reverse lst) (fold (flip cons) '() lst))
 (define (mem-helper pred op) (lambda (acc next) (if (and (not acc) (pred (op next))) next acc)))
 (define (memq obj lst) (fold (mem-helper (curry eq? obj) id) #f lst))

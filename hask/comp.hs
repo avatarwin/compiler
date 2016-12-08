@@ -429,4 +429,3 @@ runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "Lisp>>> ") . eva
 main :: IO ()
 main = do args <- getArgs
           if null args then runRepl else runOne $ args
-

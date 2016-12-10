@@ -1,8 +1,0 @@
-class Object {
- int value1;
- int value2;
- string value3 = "hello world";
- 
- int Start();
- int Stop();
-}

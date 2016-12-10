@@ -3,6 +3,27 @@
 (define digit
   (in char-set:digit))
 
+(define letter
+  (in char-set:letter))
+
+(define symbol
+  (in char-set:symbol))
+
+(define ws-cs
+  (in char-set:whitespace))
+
+(define ws
+  (one-or-more ws-cs))
+
+
+(define begin-list
+  (is #\())
+
+(define end-list
+  (is #\)))
+
+
+
 (define integer
   (as-string  (one-or-more digit)))
 
@@ -33,12 +54,8 @@
   (none-of* (is #\")
             item))
 
-(define whitespace
-  (in char-set:whitespace))
-
 (define not-whitespace
-  (none-of* whitespace
-            (is #\()
+  (none-of* ws-cs
             item))
 
 (define pstring
@@ -54,10 +71,12 @@
               (ch (as-string (one-or-more not-whitespace)))]
              (result (list 'char ch))))
 
+
 (define patom
-  (bind (as-string (one-or-more not-whitespace))
-        (lambda (x)
-          (result (list 'atom x)))))
+  (bind
+   (as-string (sequence (any-of letter symbol)
+                        (zero-or-more (any-of letter symbol digit))))
+   (lambda (x) (result (list 'atom x)))))
 
 (define pquoted
   (sequence* [(_ (is #\'))
@@ -70,40 +89,27 @@
                             pstring))]
              (result  expr)))
 
-(define inlist1
-  (any-of pquotenumstr
-          pquoted
-          pnumber
-          pstring
-          patom
-          ))
-
-;; work around greediness by grabbing one or more 'head'
-;; items, and a final tail item
-
-(define inlist*
-  (sequence* [(head (one-or-more (sequence* [(ex inlist1)
-                                             (_ whitespace)]
-                                            (result ex))))
-              (tail inlist1)]
-             (result (append head (list tail)))))
-
 (define plist
-  (sequence* [(_ (is #\())
-              (contents (any-of inlist*
-                                inlist1))
-              (_ (is #\)))]
-             (result (list 'list contents))))
-
-
+  (recursive-parser
+   (bind
+    (enclosed-by begin-list
+                 (any-of (sequence* [(first parse-expr)
+                                     (more  (zero-or-more
+                                             (preceded-by ws
+                                                          parse-expr)))]
+                                    (result (cons first more)))
+                         (result '()))
+                 end-list)
+    (lambda (x) (result (list 'list x))))))
 
 (define parse-expr
-  (any-of  pquoted
-           pquotenumstr
-           pnumber
-           pchar
-           pstring
-           patom
-           plist
+  (any-of
+          pnumber
+          pchar
+          pquoted
+          pquotenumstr
+          pstring
+          plist
+          patom
           ))
 

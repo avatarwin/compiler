@@ -1,0 +1,5 @@
+(define-target "avr"
+               description: "Atmel AVR generic target"
+               bit-size: 8
+               ram: 2048
+               rom: 8192 )

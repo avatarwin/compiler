@@ -1,5 +1,44 @@
 (use clojurian-syntax)
 
+(define +variable-tags+
+  '(int8 int16 int32 int64 int128
+         flo32 flo64 flo80
+         complex bignum
+         char string
+         vector list pair
+         procedure
+         ))
+
+
+(define +variable-store+
+  (make-hash-table))
+
+(define-record-type variable_data
+  (make-variable-data name isym type-tag)
+  variable-data?
+  (name variable-name variable-name!)
+  (isym variable-isym variable-isym!)
+  (type-tag variable-tag variable-tag!))
+
+(define (variable->string v)
+  (format #f "name: ~A internal-sym: ~A tag: ~A"
+          (variable-name v)
+          (variable-isym v)
+          (variable-tag  v)))
+
+(define (vs-dump)
+  (hash-table-for-each +variable-store+
+                       (lambda (k v)
+                         (print k)
+                         (print (variable->string v)))))
+
+
+(define (add-variable name type)
+  (let [(r (make-variable-data name
+                               (gensym "i")
+                               type))]
+    (hash-table-set! +variable-store+ name r)))
+
 
 (define (gen-int-tag bits)
   (case bits
@@ -37,7 +76,9 @@
     (emit-int-boilerplate int-sym bits)
     (emit-int-boilerplate int-meta bits)
 
-    (f ".~A:     .~A ~A" int-data storage val)
+    (case bits
+      ((64) (error '64b))
+      ((8 16 32) (f ".~A:     .~A ~A" int-data storage val)))
     (f ".~A:     .byte ~A  /* tag */" int-meta (gen-int-tag bits))
     (f "         .byte 0   /* gc data */")))
 

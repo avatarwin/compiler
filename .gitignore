@@ -4,3 +4,5 @@ hask/comp
 bytecode
 *.o
 *.hi
+*.so
+/specs/avr_rt.l

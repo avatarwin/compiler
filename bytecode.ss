@@ -21,6 +21,8 @@
 (use sparse-vectors)
 (use srfi-41)
 
+(define +address-size+ 4)
+
 (define-record-type machine
   (impl-make-machine)
   machine?
@@ -33,7 +35,7 @@
 (define (make-machine)
   (let [(m  (impl-make-machine))]
     (machine-pc! m 0)
-    (machine-sp! m #xFFFF)
+    (machine-sp! m #xFFFFFFFF)
     (machine-registers! m (make-vector 16 0))
     (machine-memory! m (make-sparse-vector 0))
     (machine-flags! m 0)
@@ -217,7 +219,7 @@
          (enc-reg (machine-read-byte/i m))
          (reg (decode-register enc-reg))
          (c   (decode-width-encoding enc-reg))
-         (addr (machine-read-multi m 2))
+         (addr (machine-read-multi m +address-size+))
          (data (machine-read-multi/a m addr c))]
     (print (fmt #f "reading from " (pad-char #\0 (fit/left 4 (num addr 16)))
                 " (" (pad-char #\0 (fit/left 2 (num data 16))) ") "
@@ -229,7 +231,7 @@
          (enc-reg (machine-read-byte/i m))
          (reg (decode-register enc-reg))
          (c   (decode-width-encoding enc-reg))
-         (addr (machine-read-multi m 2))
+         (addr (machine-read-multi m +address-size+))
          (data (vector-ref (machine-registers m) reg))]
     (print (fmt #f "writing register " (pad-char #\0 (fit/left 2 (num reg)))
                 " (" (pad-char #\0 (fit/left 2 (num data 16))) ") "
@@ -265,13 +267,13 @@
     (machine-flags! m (flags-test data))))
 
 (define (machine-process-ret m)
-  (let* [(new-pc (machine-pop-multi m 2))]
+  (let* [(new-pc (machine-pop-multi m +address-size+))]
     (machine-pc! m new-pc)))
 
 (define (machine-process-call m)
-  (let* [(new-pc (machine-read-multi m 2))
+  (let* [(new-pc (machine-read-multi m +address-size+))
          (old-pc (machine-pc m))]
-    (machine-push-multi m 2 old-pc)
+    (machine-push-multi m +address-size+ old-pc)
     (machine-pc! m new-pc)))
 
 (define (machine-run-step m)
@@ -295,8 +297,8 @@
         (pc        (machine-pc m))
         (sp        (machine-sp m))
         (flags     (machine-flags m))]
-    (print (fmt #f "pc: " (pad-char #\0 (fit/left 4 (num pc 16))) "  "
-                "sp: " (pad-char #\0 (fit/left 4 (num sp 16))) "  "
+    (print (fmt #f "pc: " (pad-char #\0 (fit/left 8 (num pc 16))) "  "
+                "sp: " (pad-char #\0 (fit/left 8 (num sp 16))) "  "
                 "flags: " (pad-char #\0 (fit/left 8 (num flags 2)))))
     (print (apply string-append
                   (map

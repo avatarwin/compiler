@@ -1,9 +1,14 @@
+;;; this file isn't really part of the compiler, but more a sandbox where I play with ideas related
+;;; to variables and their storage/interaction.
+;;;
+
 (use clojurian-syntax)
 
 (define +variable-tags+
   '(int8 int16 int32 int64 int128
-         flo32 flo64 flo80
+         flo32 flo64 flo80         
          complex bignum
+         ratio
          char string
          vector list pair
          procedure

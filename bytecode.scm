@@ -1,5 +1,7 @@
 ;;;
-;;; Bytecode
+;;; Bytecode VM
+;;; pseudo-32bit virtual machine intended to be used as a base 'assembler' for the
+;;; compiler, which can then be translated to actual real assembler.
 ;;;
 ;;; (upper)
 ;;; byte     function

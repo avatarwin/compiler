@@ -7,3 +7,7 @@ bytecode
 *.so
 /specs/avr_rt.l
 
+
+design_notes.pdf
+design_notes.rst
+missfont.log

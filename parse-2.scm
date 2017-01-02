@@ -5,6 +5,12 @@
 (define digit
   (in char-set:digit))
 
+(define hex-alpha-digit
+  (in (string->char-set "abcdefABCDEF")))
+
+(define octal-digit
+  (in (string->char-set "01234567")))
+
 (define letter
   (in char-set:letter))                 
 
@@ -25,7 +31,6 @@
   (is #\)))
 
 
-
 (define integer
   (as-string  (one-or-more digit)))
 
@@ -40,17 +45,62 @@
           (is #\e)
           (is #\E)))
 
+(define binary-prefix
+  (char-seq "#b"))
+
+(define binary-digits
+  (as-string (one-or-more (any-of (is #\0) (is #\1)))))
+
+(define hex-prefix
+  (char-seq "#x"))
+
+(define hex-digits
+  (as-string (one-or-more (any-of digit hex-alpha-digit))))
+
+(define octal-prefix
+  (char-seq "#o"))
+
+(define octal-digits
+  (as-string (one-or-more (any-of octal-digit))))
+
+(define decimal-prefix
+  (char-seq "#d"))
+
 (define exponent
   (sequence e integer))
 
-(define pnumber
+(define ratio
+  (sequence integer (is #\/) integer))
+
+(define pnumber-real
   (bind (as-string
          (sequence (maybe (is #\-)) (any-of (sequence integer fractional exponent)
                                             (sequence integer exponent)
-                                            (sequence integer fractional)
-                                            integer)))
-   (lambda (x)
-     (result (list 'number x)))))
+                                            (sequence integer fractional))))
+        (lambda (x)
+          (result (list 'number-real x)))))
+
+(define pnumber-radix
+  (bind (as-string
+         (sequence  (any-of
+                     (sequence decimal-prefix  (maybe (is #\-)) integer)
+                     (sequence octal-prefix  (maybe (is #\-)) octal-digits)
+                     (sequence binary-prefix (maybe (is #\-)) binary-digits)
+                     (sequence hex-prefix (maybe (is #\-)) hex-digits))))
+        (lambda (x)
+          (result (list 'number-radix x)))))
+
+(define pnumber-ratio
+  (bind (as-string
+         (sequence (maybe (is #\-)) ratio))
+        (lambda (x)
+          (result (list 'number-ratio x)))))
+  
+(define pnumber-integer
+  (bind (as-string
+         (sequence (maybe (is #\-)) integer))
+        (lambda (x)
+          (result (list 'number-integer x)))))
 
 (define not-dquote
   (none-of* (is #\")
@@ -104,11 +154,11 @@
                  end-list)
     (lambda (x) (result (list 'list x))))))
 
-;;; another test, go here?
-
 (define parse-expr
-  (any-of
-          pnumber
+  (any-of pnumber-real
+          pnumber-radix
+          pnumber-ratio
+          pnumber-integer
           pchar
           pquoted
           pquotenumstr

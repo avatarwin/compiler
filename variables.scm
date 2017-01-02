@@ -6,13 +6,13 @@
 
 (define +variable-tags+
   '(int8 int16 int32 int64 int128
-         flo32 flo64 flo80         
-         complex bignum
-         ratio
-         char string
-         vector list pair
-         procedure
-         ))
+    flo32 flo64 flo80         
+    complex bignum
+    ratio
+    char string
+    vector list pair
+    procedure
+   ))
 
 
 (define +variable-store+

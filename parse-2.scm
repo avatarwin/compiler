@@ -72,6 +72,7 @@
 (define ratio
   (sequence integer (is #\/) integer))
 
+
 (define pnumber-real
   (bind (as-string
          (sequence (maybe (is #\-)) (any-of (sequence integer fractional exponent)
@@ -102,12 +103,24 @@
         (lambda (x)
           (result (list 'number-integer x)))))
 
+(define pnumber-complex
+  (sequence* [(sign      (maybe (is #\-)))
+              (realp     (any-of pnumber-real pnumber-integer))
+              (imag-sign (any-of (is #\-) (is #\+)))
+              (imagp     (any-of pnumber-real pnumber-integer))
+              (_         (any-of (is #\i) (is #\I)))]
+             (result (list 'number-complex sign realp imag-sign imagp))))
+
 (define not-dquote
   (none-of* (is #\")
             item))
 
 (define not-whitespace
   (none-of* ws-cs
+            item))
+
+(define not-bar
+  (none-of* (is #\|)
             item))
 
 (define pstring
@@ -119,7 +132,8 @@
      (result (list 'string x)))))
 
 (define pchar
-  (sequence* [(_  (char-seq "#\\"))
+  (sequence* [(_  (char-seq "#"))
+              (_  (is #\\))
               (ch (as-string (one-or-more not-whitespace)))]
              (result (list 'char ch))))
 
@@ -130,10 +144,24 @@
                         (zero-or-more (any-of letter symbol digit))))
    (lambda (x) (result (list 'atom x)))))
 
+(define pqatom
+  (bind
+   (enclosed-by (is #\|)
+                (as-string (one-or-more (any-of not-bar)))
+                (is #\|))
+   (lambda (x)
+     (result (list 'atom (string-append "|" x "|"))))))
+                
 (define pquoted
   (sequence* [(_ (is #\'))
               (expr patom)]
              (result (list 'quoted expr))))
+
+(define pnumber
+  (any-of pnumber-real
+          pnumber-radix
+          pnumber-ratio
+          pnumber-integer ))
 
 (define pquotenumstr
   (sequence* [(_ (is #\'))
@@ -159,11 +187,13 @@
           pnumber-radix
           pnumber-ratio
           pnumber-integer
-          pchar
+          pnumber-complex
+          pchar          
           pquoted
           pquotenumstr
           pstring
           plist
           patom
+          pqatom
           ))
 

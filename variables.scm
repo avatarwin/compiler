@@ -2,15 +2,18 @@
 ;;; to variables and their storage/interaction.
 ;;;
 
+(use srfi-69)
 (use clojurian-syntax)
 
 (define +variable-tags+
-  '(int8 int16 int32 int64 int128
+  '(int8 int16 int32 int64
     flo32 flo64 flo80         
     complex bignum
     ratio
     char string
     vector list pair
+    hashmap
+    environment
     procedure
    ))
 
@@ -23,13 +26,15 @@
   variable-data?
   (name variable-name variable-name!)
   (isym variable-isym variable-isym!)
+  (gcdata variable-gcdata variable-gcdata!)
   (type-tag variable-tag variable-tag!))
 
 (define (variable->string v)
-  (format #f "name: ~A internal-sym: ~A tag: ~A"
+  (format #f "name: ~A internal-sym: ~A tag: ~A gc:(~A)"
           (variable-name v)
           (variable-isym v)
-          (variable-tag  v)))
+          (variable-tag  v)
+          (variable-gcdata v)))
 
 (define (vs-dump)
   (hash-table-for-each +variable-store+
@@ -37,11 +42,18 @@
                          (print k)
                          (print (variable->string v)))))
 
+(define (gc-pass)
+  (hash-table-for-each +variable-store+
+                       (lambda (k v)
+                         (let [(old (variable-gcdata v))]
+                           (if (number? old)
+                               (variable-gcdata! v (add1 old)))))))
 
 (define (add-variable name type)
   (let [(r (make-variable-data name
-                               (gensym "i")
+                               (gensym "var")
                                type))]
+    (variable-gcdata! r 0)
     (hash-table-set! +variable-store+ name r)))
 
 

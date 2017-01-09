@@ -7,7 +7,8 @@
 
 (define +variable-tags+
   '(int8 int16 int32 int64
-    flo32 flo64 flo80         
+         flo32 flo64 flo80
+         fixnum flonum
     complex bignum
     ratio
     char string
@@ -16,6 +17,7 @@
     environment
     procedure
    ))
+
 
 
 (define +variable-store+
@@ -28,6 +30,17 @@
   (isym variable-isym variable-isym!)
   (gcdata variable-gcdata variable-gcdata!)
   (type-tag variable-tag variable-tag!))
+
+
+(define (make-fixnum value)
+  (make-variable-data (gensym "fixed")
+                      value
+                      'int64))
+
+(define (make-flonum value)
+  (make-variable-data (gensym "real")
+                      value
+                      'flo64))
 
 (define (variable->string v)
   (format #f "name: ~A internal-sym: ~A tag: ~A gc:(~A)"

@@ -1,6 +1,7 @@
 ;;;; testing...
 
-(use comparse srfi-14)
+(use fmt comparse srfi-14)
+
 
 (define digit
   (in char-set:digit))
@@ -23,13 +24,18 @@
 (define ws
   (one-or-more ws-cs))
 
-
+(define whitespace
+  (bind (one-or-more ws-cs)
+        (lambda (x)
+          (result 'useless-space))))
+        
 (define begin-list
-  (is #\())
-
+  (any-of  (is #\()
+           (is #\[)))
+  
 (define end-list
-  (is #\)))
-
+  (any-of  (is #\))
+           (is #\])))
 
 (define integer
   (as-string  (one-or-more digit)))
@@ -71,7 +77,6 @@
 
 (define ratio
   (sequence integer (is #\/) integer))
-
 
 (define pnumber-real
   (bind (as-string
@@ -138,6 +143,13 @@
              (result (list 'char ch))))
 
 
+(define prepl
+  (bind
+   (as-string (sequence (is #\,) (zero-or-more (any-of letter symbol digit))))
+   (lambda (x)
+     (result (list 'repl-command x)))))
+
+
 (define patom
   (bind
    (as-string (sequence (any-of letter symbol)
@@ -182,6 +194,11 @@
                  end-list)
     (lambda (x) (result (list 'list x))))))
 
+(define perror
+  (bind end-list
+        (lambda (x)
+          (result 'error))))
+
 (define parse-expr
   (any-of pnumber-real
           pnumber-radix
@@ -195,5 +212,27 @@
           plist
           patom
           pqatom
+          prepl
+          perror
           ))
 
+(define (ns-repl)
+  (let ((lineno 0))
+    (let outer-loop ((quit #f))
+      (display (fmt #f "#;" lineno "> "))
+      (let loop ((input-string ""))
+        (let* ((new-string (read-line))
+               (ap (string-append input-string
+                                  (if (zero? (string-length input-string))
+                                      ""
+                                      " ")
+                                  new-string))
+               (pr (parse parse-expr ap)))
+          (set! lineno (+ 1 lineno))
+          (cond ((string= ap " ")
+                 (loop ""))
+                (pr             
+                 (print pr))
+                (else
+                 (loop ap)))))
+      (outer-loop #f))))

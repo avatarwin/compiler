@@ -21,7 +21,7 @@
 
 
 (define +variable-store+
-  (make-hash-table))
+  '())
 
 (define-record-type variable_data
   (make-variable-data name isym type-tag)
@@ -50,24 +50,29 @@
           (variable-gcdata v)))
 
 (define (vs-dump)
-  (hash-table-for-each +variable-store+
-                       (lambda (k v)
-                         (print k)
-                         (print (variable->string v)))))
+  (for-each (lambda (k)
+              (print (car k))
+              (print (variable->string (cdr k))))
+            +variable-store+))
 
 (define (gc-pass)
-  (hash-table-for-each +variable-store+
-                       (lambda (k v)
-                         (let [(old (variable-gcdata v))]
-                           (if (number? old)
-                               (variable-gcdata! v (add1 old)))))))
+  (for-each
+   (lambda (x)
+     (let [(old (variable-gcdata (cdr x)))]
+       (if (number? old)
+           (variable-gcdata! (cdr x) (add1 old)))))
+   +variable-store+))
 
 (define (add-variable name type)
   (let [(r (make-variable-data name
                                (gensym "var")
                                type))]
     (variable-gcdata! r 0)
-    (hash-table-set! +variable-store+ name r)))
+    (set! +variable-store+
+          (append (list (cons name r))
+                  +variable-store+))))
+
+
 
 
 (define (gen-int-tag bits)
@@ -90,7 +95,7 @@
           (f ".size   ~A, ~A" (/ bits 8)))
     #t))
 
-               
+
 (define (emit-integer bits name val)
   (let* [(int-sym  (symbol->string name))
          (int-data (string-append int-sym "_dat"))
@@ -101,7 +106,7 @@
                      ((32) ".long")))
          (f (lambda (str . a)
               (print (apply format (append (list #f str ) a)))))]
-    
+
     (print "         .section bss")
     (emit-int-boilerplate int-sym bits)
     (emit-int-boilerplate int-meta bits)

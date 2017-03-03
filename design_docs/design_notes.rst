@@ -16,7 +16,7 @@ Common Lisp problems:
 
 -  no focus on TCO recursion
 
--  limited macros
+-  limited macros (?)
 
 -  Lisp-2 is VERY annoying
 
@@ -24,13 +24,13 @@ Scheme problems:
 
 -  No 'declare' support for static typing
 
--  Bulky and inconsistant SRFIs (lists and vectors have a wide range of
+-  Bulky and inconsistent SRFIs (lists and vectors have a wide range of
    modern hi-order operations thanks to srfi-1 & srfi-133, but the typed
    vectors, eg f32vector, do not).
 
 Common problems:
 
--  No easy solution for *all* targets wanted (avr, pic, arm/cortex - CL
+-  No easy solution for *all* targets wanted (AVR, pic, arm/cortex - CL
    has an advantage here)
 
 -  Both lisp and scheme aren't really suited for a offline complication,

@@ -199,6 +199,10 @@
         (lambda (x)
           (result 'error))))
 
+(define parse-tl
+  (any-of parse-expr
+          prepl))
+
 (define parse-expr
   (any-of pnumber-real
           pnumber-radix
@@ -212,27 +216,5 @@
           plist
           patom
           pqatom
-          prepl
           perror
           ))
-
-(define (ns-repl)
-  (let ((lineno 0))
-    (let outer-loop ((quit #f))
-      (display (fmt #f "#;" lineno "> "))
-      (let loop ((input-string ""))
-        (let* ((new-string (read-line))
-               (ap (string-append input-string
-                                  (if (zero? (string-length input-string))
-                                      ""
-                                      " ")
-                                  new-string))
-               (pr (parse parse-expr ap)))
-          (set! lineno (+ 1 lineno))
-          (cond ((string= ap " ")
-                 (loop ""))
-                (pr             
-                 (print pr))
-                (else
-                 (loop ap)))))
-      (outer-loop #f))))

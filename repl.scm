@@ -17,23 +17,51 @@
   (history repl-history (setter repl-history))
   (run repl-run (setter repl-run)))
 
+(define-record-type repl-handler
+  (make-repl-handler
+   name function description)
+  repl-handler?
+  (name        rh-name (setter rh-name))
+  (function    rh-function (setter rh-function))
+  (description rh-description (setter rh-description)))
 
 (define (handle-repl-cmd rc rs)
-  (let* ((cmd (substring (cadr rc) 1 (string-length (cadr rc))))
-         (as  (assoc cmd (repl-handlers rs))))
+  (let* ((rhl      (repl-handlers rs))
+         (find-cmd (lambda (name)
+                     (find (lambda (x)
+                             (equal? (rh-name x) name)) rhl)))         
+         (cmd (first
+               (string-split
+                (substring (cadr rc) 1 (string-length (cadr rc))))))
+         (as  (find-cmd cmd)))
     (if (equal? #f as)
         (print (fmt #f "Invalid top-level command : " cmd))
-        (for-each (lambda (x) (apply x (list rc rs))) (cdr as)))))
+        (let ((fun (rh-function as)))
+          (if (pair? fun)
+              (for-each (lambda (x) (apply x (list rc rs))) fun)
+              (apply fun (list rc rs)))))))
 
 (define (repl-quit rc rs)
   (set! (repl-run rs) #f))
+
+(define (repl-help rc rs)
+  (let ((h (repl-handlers rs)))
+    (set! h (sort h (lambda (l r) (string-ci< (rh-name l) (rh-name r)))))
+    (for-each (lambda (x)
+                (print (fmt #f
+                            ","
+                            (rh-name x)
+                            "\t - "
+                            (rh-description x))))
+              h)))
 
 (define (ns-repl)
   (let* ((tle (new-tl-environment))
          (rs (make-repl-settings ""
                                  "#;7- "
                                  0
-                                 (list (list "quit" repl-quit))
+                                 (list (make-repl-handler "quit" repl-quit "quit the interpreter")
+                                       (make-repl-handler "help" repl-help "list repl commands"))
                                  '()
                                  #t))
          (get-repl-settings (lambda () rs))
@@ -58,11 +86,11 @@
                                          ""
                                          " ")
                                      new-string))
-                  (pr (parse parse-expr ap)))             
+                  (pr (parse parse-tl ap)))             
              (set! (repl-line-no rs) (+ 1 (repl-line-no rs)))
              (cond ((string= ap " ")
                     (loop ""))                   
-                   ((equal? (car pr) 'repl-command)
+                   ((and pr (equal? (car pr) 'repl-command))
                     (handle-repl-cmd pr rs))
                    (pr             
                     (append-history ap)

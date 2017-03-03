@@ -18,12 +18,33 @@
 ;;; 10       push register
 ;;; 11       pop  register
 ;;; 12       return
+;;; 13       system
 
 (use fmt)
-(use sparse-vectors)
+(use svec)
 (use srfi-41)
 
 (define +address-size+ 4)
+
+(define-record-type bytecode-block
+  (impl-make-bytecode symbol code signature)
+  bytecode?
+  (symbol    bytecode-symbol    bytecode-symbol!)
+  (code      bytecode-code      bytecode-code!)
+  (signature bytecode-signature bytecode-signature!))
+
+(define (make-bytecode-block)
+  (impl-make-bytecode 'undef (make-vector 0) '()))
+
+
+(define-record-type memory-region
+  (impl-make-mem-region)
+  mem-region?
+  (start    memregion-start memregion-start!)
+  (end      memregion-end   memregion-end))
+
+(define +memory-pool+ '())
+(define +memory-allocated+ '())
 
 (define-record-type machine
   (impl-make-machine)
@@ -39,7 +60,7 @@
     (machine-pc! m 0)
     (machine-sp! m #xFFFFFFFF)
     (machine-registers! m (make-vector 16 0))
-    (machine-memory! m (make-sparse-vector 0))
+    (machine-memory! m (make-svec 0))
     (machine-flags! m 0)
     m))
 
@@ -48,7 +69,7 @@
            (fn  (lambda (addr x)
                   (if (not (null? x))
                       (begin
-                        (sparse-vector-set! mem addr (car x))
+                        (svec-set! mem addr (car x))
                         (fn (add1 addr) (cdr x))))))]
     (fn base data)))
 
@@ -69,20 +90,22 @@
                  (sa 'jr- (second x)) 4)) bits)))
 
 (define bytecode-instructions
-  (list '(0 nop 0)
-        '(1 breakpoint 0)
+  (list '(0 nop 0 0)
+        '(1 breakpoint 0 0)
         '(2 loadi 5)
         '(3 loadm 3)
         '(4 storem 5)
         '(5 addi 5)
         '(6 divi 5)
         '(7 muli 5)
-        '(9 call 0)
+        '(9 call 4)
         '(10 push 1)
         '(11 pop  1)
         '(12 ret  0)
-        '(13 movrr' 2)
-        '(14 addrr' 2)
+        '(13 movrr 2)
+        '(14 addrr 2)
+        '(15 system 4)
+        '(16 lookup 4)
         (make-jump-instructions)
        ))
 
@@ -98,12 +121,12 @@
 (define (machine-read-byte/noi m)
   (let [(mem (machine-memory m))
         (pc  (machine-pc m))]
-    (sparse-vector-ref mem pc)))
+    (svec-ref mem pc)))
 
 (define (machine-read-byte/i m)
   (let* [(mem (machine-memory m))
          (pc  (machine-pc m))
-         (res (sparse-vector-ref mem pc))]
+         (res (svec-ref mem pc))]
     (machine-pc! m (add1 pc))
     res))
 
@@ -135,12 +158,12 @@
 
 (define (machine-write-byte/a m addr data)
   (let [(mem (machine-memory m))]
-    (sparse-vector-set! mem addr data)))
+    (svec-set! mem addr data)))
 
 (define (machine-push-byte m data)
   (let [(mem (machine-memory m))
         (sp  (machine-sp m))]
-    (sparse-vector-set! mem sp (bitwise-and data #xFF))
+    (svec-set! mem sp (bitwise-and data #xFF))
     (machine-sp! m (- sp 1))
     data))
 
@@ -173,7 +196,7 @@
 (define (machine-pop-byte m)
   (let* [(mem (machine-memory m))
          (sp  (add1 (machine-sp m)))
-         (data (sparse-vector-ref mem sp))]
+         (data (svec-ref mem sp))]
     (machine-sp! m sp)
     data))
 
@@ -195,7 +218,7 @@
 
 (define (machine-read-byte/a m addr)
   (let [(mem (machine-memory m))]
-    (sparse-vector-ref mem addr)))
+    (svec-ref mem addr)))
 
 (define (decode-width-encoding c)
   (case (bitwise-and c #x1F)
@@ -281,8 +304,6 @@
 (define (machine-run-step m)
   (let* [(insn (machine-read-byte/i m))
          (bc   (lookup-bytecode insn))]
-    (print insn)
-    (print bc)
     (case (second bc)
       ((nop)    (void))
       ((loadi)  (machine-process-loadi m))
@@ -292,7 +313,8 @@
       ((push)   (machine-process-push m))
       ((pop)    (machine-process-pop m))
       ((call)   (machine-process-call m))
-      ((ret)    (machine-process-ret m)))))
+      ((ret)    (machine-process-ret m))
+      (else     (print "unimplemented opcode")))))
 
 (define (machine-pstate m)
   (let [(registers (machine-registers m))
@@ -310,3 +332,4 @@
                                  (num (vector-ref registers x) 16)))
                           (if (= x 7) "\n" "  "))) (iota 16))))
     ))
+

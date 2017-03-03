@@ -1,0 +1,35 @@
+;;; Assembler for BCASM
+
+(define (make-jump-instructions)
+  (let ((bits  (list '(#x1 z)
+                     '(#x9 nz)
+                     '(#x2 c)
+                     '(#xA nc)))
+        (sa (lambda (x y)
+              (string->symbol
+               (string-append (symbol->string x)
+                              (symbol->string y))))))
+    (map (lambda (x)
+           (list (+ #x80 (first x))
+                 (sa 'jr- (second x)) 4)) bits)))
+
+;; opcode opcode-name min args max args
+(define bytecode-instructions
+  (list '(0 nop ())
+        '(1 breakpoint ())
+        '(2 loadi ())
+        '(3 loadm ())
+        '(4 storem ())
+        '(5 addi ())
+        '(6 divi ())
+        '(7 muli ())
+        '(9 call ())
+        '(10 push ())
+        '(11 pop ())
+        '(12 ret ())
+        '(13 movrr ())
+        '(14 addrr ())
+        '(15 system ())
+        '(16 lookup ())
+        (make-jump-instructions)
+       ))

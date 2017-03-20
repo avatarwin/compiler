@@ -15,8 +15,11 @@
 (define letter
   (in char-set:letter))                 
 
+(define my-symbol
+  (string->char-set "~|`^>=<+$,.-"))
+
 (define symbol
-  (in char-set:symbol))
+  (in my-symbol))
 
 (define ws-cs
   (in char-set:whitespace))

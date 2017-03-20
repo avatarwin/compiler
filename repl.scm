@@ -46,7 +46,8 @@
 
 (define (repl-help rc rs)
   (let ((h (repl-handlers rs)))
-    (set! h (sort h (lambda (l r) (string-ci< (rh-name l) (rh-name r)))))
+    (set! h
+          (sort h (lambda (l r) (string-ci< (rh-name l) (rh-name r)))))
     (for-each (lambda (x)
                 (print (fmt #f
                             ","
@@ -55,13 +56,19 @@
                             (rh-description x))))
               h)))
 
+(define (init-repl rs)
+  (set! (repl-handlers rs)
+        (list (make-repl-handler "quit" repl-quit "quit the interpreter")
+              (make-repl-handler "help" repl-help "list repl commands"))))
+
+
+
 (define (ns-repl)
   (let* ((tle (new-tl-environment))
          (rs (make-repl-settings ""
                                  "#;7- "
                                  0
-                                 (list (make-repl-handler "quit" repl-quit "quit the interpreter")
-                                       (make-repl-handler "help" repl-help "list repl commands"))
+                                 '()
                                  '()
                                  #t))
          (get-repl-settings (lambda () rs))
@@ -70,6 +77,7 @@
                                  (append (repl-history rs)
                                          (list str))))))
     (banner)
+    (init-repl rs)
     (call/cc
      (lambda (bail)
        (let outer-loop ()
